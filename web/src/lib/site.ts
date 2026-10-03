@@ -38,7 +38,7 @@ export const site = {
     },
     {
       group: 'Backend',
-      items: ['Node.js', 'NestJS', 'Express', 'Prisma', 'PostgreSQL', 'REST & WebSockets'],
+      items: ['Node.js', 'NestJS', 'Express', 'Prisma', 'PostgreSQL', 'Supabase', 'REST & WebSockets'],
     },
     {
       group: 'AI',
