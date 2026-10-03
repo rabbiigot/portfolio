@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Calendar, Video, Clock, CalendarIcon } from 'lucide-react';
+import { Calendar, Video, Clock, CalendarIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { api } from '../lib/api';
 import { site } from '../lib/site';
 import { cn } from '../lib/utils';
 import { Reveal } from '../components/Reveal';
 import { Textarea } from '../components/ui/textarea';
-import { ScrollArea } from '../components/ui/scroll-area';
 import { Button } from '../components/ui/button';
 import { Calendar as DatePicker } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -24,11 +24,11 @@ export function Contact() {
         </p>
       </Reveal>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Reveal>
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+        <Reveal className="h-full">
           <MessageForm />
         </Reveal>
-        <Reveal>
+        <Reveal className="h-full">
           <BookMeeting />
         </Reveal>
       </div>
@@ -46,10 +46,14 @@ export function Contact() {
 
 function MessageForm() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const mutation = useMutation({ mutationFn: api.contact });
+  const mutation = useMutation({
+    mutationFn: api.contact,
+    onSuccess: () => toast.success('Message sent — I’ll get back to you shortly.'),
+    onError: () => toast.error('Couldn’t send your message. Please try again or email me directly.'),
+  });
 
   return (
-    <div className="card-surface !p-6">
+    <div className="card-surface !p-6 flex h-full flex-col">
       <h3 className="text-lg font-bold">Send a message</h3>
       {mutation.isSuccess ? (
         <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm text-emerald-300">
@@ -57,41 +61,45 @@ function MessageForm() {
           {form.email || 'your email'}.
         </div>
       ) : (
-        <ScrollArea className="mt-4 max-h-[52vh]">
-          <form
-            className="grid gap-3 pr-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              mutation.mutate(form);
-            }}
+        <form
+          className="mt-4 flex flex-1 flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate(form);
+          }}
+        >
+          <input
+            required
+            placeholder="Your name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
+          />
+          <input
+            required
+            type="email"
+            placeholder="you@email.com"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
+          />
+          <Textarea
+            required
+            placeholder="What are you building?"
+            value={form.message}
+            onChange={(e) => setForm({ ...form, message: e.target.value })}
+            className="h-auto min-h-32 flex-1"
+          />
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="btn btn-primary justify-center gap-2 disabled:opacity-60"
           >
-            <input
-              required
-              placeholder="Your name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
-            />
-            <input
-              required
-              type="email"
-              placeholder="you@email.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
-            />
-            <Textarea
-              required
-              placeholder="What are you building?"
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-            />
-            <button type="submit" disabled={mutation.isPending} className="btn btn-primary justify-center">
-              {mutation.isPending ? 'Sending…' : 'Send message'}
-            </button>
-            {mutation.isError && <p className="text-sm text-red-400">Something went wrong. Try again.</p>}
-          </form>
-        </ScrollArea>
+            {mutation.isPending && <Loader2 size={15} className="animate-spin" />}
+            {mutation.isPending ? 'Sending…' : 'Send message'}
+          </button>
+          {mutation.isError && <p className="text-sm text-red-400">Something went wrong. Try again.</p>}
+        </form>
       )}
     </div>
   );
@@ -106,7 +114,21 @@ function BookMeeting() {
   todayStart.setHours(0, 0, 0, 0);
   // Creates a real Google Calendar event with a Meet link server-side and
   // emails the invite to the guest.
-  const booking = useMutation({ mutationFn: api.bookMeeting });
+  const booking = useMutation({
+    mutationFn: api.bookMeeting,
+    onSuccess: (data) =>
+      toast.success('Meeting booked!', {
+        description: `Invite sent to ${b.email}${data.meetLink ? ' with the Google Meet link.' : '.'}`,
+      }),
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : '';
+      toast.error('Couldn’t book that slot', {
+        description: /not connected/i.test(msg)
+          ? 'Calendar booking isn’t available right now — please email me directly.'
+          : 'Try another time, or email me directly.',
+      });
+    },
+  });
 
   const ready = b.name.trim() && b.email.trim() && b.date && b.time;
 
@@ -116,7 +138,7 @@ function BookMeeting() {
   };
 
   return (
-    <div className="card-surface !p-6">
+    <div className="card-surface !p-6 flex h-full flex-col">
       <h3 className="flex items-center gap-2 text-lg font-bold">
         <Calendar size={18} className="text-accent2" />
         Book a meeting
@@ -210,8 +232,9 @@ function BookMeeting() {
           <button
             onClick={book}
             disabled={!ready || booking.isPending}
-            className="btn btn-primary justify-center disabled:opacity-50"
+            className="btn btn-primary justify-center gap-2 disabled:opacity-50"
           >
+            {booking.isPending && <Loader2 size={15} className="animate-spin" />}
             {booking.isPending ? 'Booking…' : 'Book meeting on Google Meet'}
           </button>
           {booking.isError && (

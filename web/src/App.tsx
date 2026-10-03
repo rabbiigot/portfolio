@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { Sidebar } from './components/Sidebar';
 import { CircuitBackground } from './components/CircuitBackground';
 import { WelcomeModal } from './components/WelcomeModal';
@@ -62,6 +63,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Toaster richColors position="top-right" theme="dark" />
       <WelcomeModal />
       <CircuitBackground />
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
