@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Calendar, Video, Clock } from 'lucide-react';
+import { Calendar, Video, Clock, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { api } from '../lib/api';
 import { site } from '../lib/site';
+import { cn } from '../lib/utils';
 import { Reveal } from '../components/Reveal';
 import { Textarea } from '../components/ui/textarea';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { Button } from '../components/ui/button';
+import { Calendar as DatePicker } from '../components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 
 export function Contact() {
   return (
@@ -95,8 +100,10 @@ function MessageForm() {
 const SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
 function BookMeeting() {
-  const today = new Date().toISOString().split('T')[0];
   const [b, setB] = useState({ name: '', email: '', date: '', time: '' });
+  const selectedDate = b.date ? new Date(`${b.date}T00:00:00`) : undefined;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
   // Creates a real Google Calendar event with a Meet link server-side and
   // emails the invite to the guest.
   const booking = useMutation({ mutationFn: api.bookMeeting });
@@ -153,13 +160,31 @@ function BookMeeting() {
           />
           <div>
             <label className="text-xs font-medium text-faint">Select a date</label>
-            <input
-              type="date"
-              min={today}
-              value={b.date}
-              onChange={(e) => setB({ ...b, date: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-text outline-none focus:border-accent [color-scheme:dark]"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    'mt-1 h-auto w-full justify-start rounded-xl px-4 py-3 text-sm font-normal',
+                    !b.date && 'text-faint',
+                  )}
+                >
+                  <CalendarIcon size={15} className="mr-2 text-accent2" />
+                  {selectedDate ? format(selectedDate, 'EEE, MMM d, yyyy') : 'Select a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <DatePicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => d && setB({ ...b, date: format(d, 'yyyy-MM-dd') })}
+                  disabled={{ before: todayStart }}
+                  defaultMonth={selectedDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <label className="flex items-center gap-1.5 text-xs font-medium text-faint">
