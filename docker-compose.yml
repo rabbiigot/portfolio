@@ -1,6 +1,7 @@
 # Portfolio — full stack on one host, modeled on the SimpleFlow deploy.
-# SimpleFlow already binds :80 on this VPS, so the portfolio web is published on
-# :8080. The API is internal-only; the web's nginx proxies /api to it.
+# SimpleFlow already uses :8080 on this VPS (and :3001/:3002/:5433/:5678), so the
+# portfolio web defaults to :8090. Override with PORTFOLIO_WEB_PORT if needed.
+# The API is internal-only; the web's nginx proxies /api to it.
 services:
   api:
     build: ./api
@@ -10,7 +11,7 @@ services:
       - DATABASE_URL=file:/data/dev.db
       # Browser calls are same-origin via the web's nginx proxy, but allow the
       # public origin too for any direct hits.
-      - CORS_ORIGINS=${PORTFOLIO_PUBLIC_ORIGIN:-http://187.124.93.159:8080}
+      - CORS_ORIGINS=${PORTFOLIO_PUBLIC_ORIGIN:-http://187.124.93.159:8090}
       # Optional: wire the real SimpleFlow orchestrator (left blank = built-in
       # fallback planner, so the demo always works).
       - SIMPLEFLOW_URL=${SIMPLEFLOW_URL:-}
@@ -25,7 +26,7 @@ services:
   web:
     build: ./web
     ports:
-      - "8080:80"
+      - "${PORTFOLIO_WEB_PORT:-8090}:80"
     depends_on:
       - api
     networks:
