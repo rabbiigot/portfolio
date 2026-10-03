@@ -8,6 +8,7 @@ import { ContactModule } from './contact/contact.module';
 import { AiModule } from './ai/ai.module';
 import { UptimeModule } from './uptime/uptime.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
+import { MeetingsModule } from './meetings/meetings.module';
 import { ActivityInterceptor } from './common/activity.interceptor';
 
 @Controller()
@@ -27,6 +28,7 @@ class HealthController {
     AiModule,
     UptimeModule,
     WorkspacesModule,
+    MeetingsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_INTERCEPTOR, useClass: ActivityInterceptor }],

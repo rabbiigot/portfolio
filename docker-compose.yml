@@ -11,12 +11,20 @@ services:
       - DATABASE_URL=file:/data/dev.db
       # Browser calls are same-origin via the web's nginx proxy, but allow the
       # public origin too for any direct hits.
-      - CORS_ORIGINS=${PORTFOLIO_PUBLIC_ORIGIN:-http://187.124.93.159:8090}
+      - CORS_ORIGINS=${PORTFOLIO_PUBLIC_ORIGIN:-https://portfolio.syncstack.tech,http://187.124.93.159:8090}
       # Optional: wire the real SimpleFlow orchestrator (left blank = built-in
       # fallback planner, so the demo always works).
       - SIMPLEFLOW_URL=${SIMPLEFLOW_URL:-}
       - SIMPLEFLOW_TOKEN=${SIMPLEFLOW_TOKEN:-}
       - SIMPLEFLOW_USER_ID=${SIMPLEFLOW_USER_ID:-1}
+      # Google Calendar/Meet booking (reuses the SimpleFlow OAuth app). Values
+      # come from the .env next to this compose file on the VPS.
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-https://portfolio.syncstack.tech/api/meetings/google/callback}
+      - MEETINGS_TIMEZONE=${MEETINGS_TIMEZONE:-Asia/Manila}
+      - MEETINGS_DURATION_MIN=${MEETINGS_DURATION_MIN:-30}
+      - MEETINGS_SETUP_KEY=${MEETINGS_SETUP_KEY:-}
     volumes:
       - portfolio-db:/data
     networks:

@@ -97,36 +97,15 @@ const SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '1
 function BookMeeting() {
   const today = new Date().toISOString().split('T')[0];
   const [b, setB] = useState({ name: '', email: '', date: '', time: '' });
-  const [booked, setBooked] = useState(false);
-  const record = useMutation({ mutationFn: api.contact });
+  // Creates a real Google Calendar event with a Meet link server-side and
+  // emails the invite to the guest.
+  const booking = useMutation({ mutationFn: api.bookMeeting });
 
   const ready = b.name.trim() && b.email.trim() && b.date && b.time;
 
-  const gcalUrl = () => {
-    const start = new Date(`${b.date}T${b.time}`);
-    const end = new Date(start.getTime() + 30 * 60 * 1000);
-    const z = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const params = new URLSearchParams({
-      action: 'TEMPLATE',
-      text: `Meeting with ${site.name}`,
-      dates: `${z(start)}/${z(end)}`,
-      details: `Intro meeting (Google Meet) requested by ${b.name}. A Meet link will be added to the invite.`,
-      add: site.email,
-    });
-    return `https://calendar.google.com/calendar/render?${params.toString()}`;
-  };
-
   const book = () => {
-    if (!ready) return;
-    // Record the request so it lands in the portfolio inbox…
-    record.mutate({
-      name: b.name,
-      email: b.email,
-      message: `Meeting request — ${b.date} at ${b.time} (Google Meet, 30 min).`,
-    });
-    // …then open Google Calendar to create the invite (with me as guest).
-    window.open(gcalUrl(), '_blank', 'noopener,noreferrer');
-    setBooked(true);
+    if (!ready || booking.isPending) return;
+    booking.mutate({ name: b.name, email: b.email, date: b.date, time: b.time });
   };
 
   return (
@@ -139,14 +118,23 @@ function BookMeeting() {
         <Video size={14} /> 30-minute call over Google Meet.
       </p>
 
-      {booked ? (
+      {booking.isSuccess ? (
         <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm text-emerald-300">
-          Opening Google Calendar to confirm your <b>{b.date}</b> at <b>{b.time}</b> slot — save it and
-          I'll get the invite. If the tab didn't open,{' '}
-          <a href={gcalUrl()} target="_blank" rel="noreferrer" className="underline">
-            click here
-          </a>
-          .
+          Booked for <b>{b.date}</b> at <b>{b.time}</b> ({booking.data.timeZone}). A calendar invite
+          with the Google Meet link is on its way to <b>{b.email}</b>.
+          {booking.data.meetLink && (
+            <>
+              {' '}Join:{' '}
+              <a
+                href={booking.data.meetLink}
+                target="_blank"
+                rel="noreferrer"
+                className="underline break-all"
+              >
+                {booking.data.meetLink}
+              </a>
+            </>
+          )}
         </div>
       ) : (
         <div className="mt-4 grid gap-3">
@@ -196,11 +184,16 @@ function BookMeeting() {
           </div>
           <button
             onClick={book}
-            disabled={!ready}
+            disabled={!ready || booking.isPending}
             className="btn btn-primary justify-center disabled:opacity-50"
           >
-            Book meeting on Google Meet
+            {booking.isPending ? 'Booking…' : 'Book meeting on Google Meet'}
           </button>
+          {booking.isError && (
+            <p className="text-sm text-red-400">
+              Couldn't book that slot — try another time, or email me directly.
+            </p>
+          )}
         </div>
       )}
     </div>

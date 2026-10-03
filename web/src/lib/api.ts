@@ -84,7 +84,25 @@ export const api = {
   getWorkspace: (id: number) => req<WorkspaceRow & { tasks: TaskRow[] }>(`/workspaces/${id}`),
   deleteWorkspace: (id: number) =>
     req<{ deleted: true; id: number }>(`/workspaces/${id}`, { method: 'DELETE' }),
+
+  // ── Meeting booking: creates a real Google Calendar event with a Meet link ──
+  meetingsStatus: () => req<MeetingsStatus>('/meetings/status'),
+  bookMeeting: (body: { name: string; email: string; date: string; time: string; message?: string }) =>
+    req<BookMeetingResult>('/meetings/book', { method: 'POST', body: JSON.stringify(body) }),
 };
+
+export interface MeetingsStatus {
+  connected: boolean;
+  googleEmail?: string;
+}
+export interface BookMeetingResult {
+  ok: true;
+  id: number;
+  meetLink: string | null;
+  eventId: string;
+  startsAt: string;
+  timeZone: string;
+}
 
 export interface WorkspaceRow {
   id: number;

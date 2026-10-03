@@ -92,3 +92,33 @@ model ActivityLog {
 
   @@index([createdAt])
 }
+
+/// Singleton row holding the portfolio owner's Google OAuth tokens, captured
+/// once via the /api/meetings/google/connect consent flow. Used to create
+/// calendar events (with Meet links) on the owner's calendar. Tokens are
+/// stored on the server's DB volume, never in the repo.
+model GoogleCredential {
+  id           Int      @id @default(autoincrement())
+  googleEmail  String
+  accessToken  String
+  refreshToken String
+  tokenExpiry  DateTime
+  scope        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// A booked intro meeting from the contact page (with its Google Meet link).
+model Meeting {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  startsAt  DateTime
+  endsAt    DateTime
+  meetLink  String?
+  eventId   String?
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([startsAt])
+}
