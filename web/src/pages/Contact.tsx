@@ -1,0 +1,208 @@
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Calendar, Video, Clock } from 'lucide-react';
+import { api } from '../lib/api';
+import { site } from '../lib/site';
+import { Reveal } from '../components/Reveal';
+import { Textarea } from '../components/ui/textarea';
+import { ScrollArea } from '../components/ui/scroll-area';
+
+export function Contact() {
+  return (
+    <>
+      <Reveal>
+        <div className="eyebrow">Contact</div>
+        <h1 className="text-[clamp(28px,4vw,44px)] font-extrabold tracking-tight">Let's build something.</h1>
+        <p className="mt-4 max-w-[560px] text-lg text-muted">
+          Have a product, platform, automation, or AI feature you want shipped? Send a message — or
+          book a meeting and we'll talk it through over Google Meet.
+        </p>
+      </Reveal>
+
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Reveal>
+          <MessageForm />
+        </Reveal>
+        <Reveal>
+          <BookMeeting />
+        </Reveal>
+      </div>
+
+      <p className="mt-8 text-sm text-faint">
+        Or email me directly at{' '}
+        <a href={`mailto:${site.email}`} className="text-muted hover:text-text">
+          {site.email}
+        </a>
+        .
+      </p>
+    </>
+  );
+}
+
+function MessageForm() {
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const mutation = useMutation({ mutationFn: api.contact });
+
+  return (
+    <div className="card-surface !p-6">
+      <h3 className="text-lg font-bold">Send a message</h3>
+      {mutation.isSuccess ? (
+        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm text-emerald-300">
+          Thanks — your message was received (id #{mutation.data.id}). I'll get back to you at{' '}
+          {form.email || 'your email'}.
+        </div>
+      ) : (
+        <ScrollArea className="mt-4 max-h-[52vh]">
+          <form
+            className="grid gap-3 pr-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              mutation.mutate(form);
+            }}
+          >
+            <input
+              required
+              placeholder="Your name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
+            />
+            <input
+              required
+              type="email"
+              placeholder="you@email.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="rounded-xl border border-border bg-card px-4 py-3 text-text outline-none focus:border-accent"
+            />
+            <Textarea
+              required
+              placeholder="What are you building?"
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
+            />
+            <button type="submit" disabled={mutation.isPending} className="btn btn-primary justify-center">
+              {mutation.isPending ? 'Sending…' : 'Send message'}
+            </button>
+            {mutation.isError && <p className="text-sm text-red-400">Something went wrong. Try again.</p>}
+          </form>
+        </ScrollArea>
+      )}
+    </div>
+  );
+}
+
+const SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+
+function BookMeeting() {
+  const today = new Date().toISOString().split('T')[0];
+  const [b, setB] = useState({ name: '', email: '', date: '', time: '' });
+  const [booked, setBooked] = useState(false);
+  const record = useMutation({ mutationFn: api.contact });
+
+  const ready = b.name.trim() && b.email.trim() && b.date && b.time;
+
+  const gcalUrl = () => {
+    const start = new Date(`${b.date}T${b.time}`);
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+    const z = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `Meeting with ${site.name}`,
+      dates: `${z(start)}/${z(end)}`,
+      details: `Intro meeting (Google Meet) requested by ${b.name}. A Meet link will be added to the invite.`,
+      add: site.email,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
+
+  const book = () => {
+    if (!ready) return;
+    // Record the request so it lands in the portfolio inbox…
+    record.mutate({
+      name: b.name,
+      email: b.email,
+      message: `Meeting request — ${b.date} at ${b.time} (Google Meet, 30 min).`,
+    });
+    // …then open Google Calendar to create the invite (with me as guest).
+    window.open(gcalUrl(), '_blank', 'noopener,noreferrer');
+    setBooked(true);
+  };
+
+  return (
+    <div className="card-surface !p-6">
+      <h3 className="flex items-center gap-2 text-lg font-bold">
+        <Calendar size={18} className="text-accent2" />
+        Book a meeting
+      </h3>
+      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+        <Video size={14} /> 30-minute call over Google Meet.
+      </p>
+
+      {booked ? (
+        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm text-emerald-300">
+          Opening Google Calendar to confirm your <b>{b.date}</b> at <b>{b.time}</b> slot — save it and
+          I'll get the invite. If the tab didn't open,{' '}
+          <a href={gcalUrl()} target="_blank" rel="noreferrer" className="underline">
+            click here
+          </a>
+          .
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3">
+          <input
+            placeholder="Your name"
+            value={b.name}
+            onChange={(e) => setB({ ...b, name: e.target.value })}
+            className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-text outline-none focus:border-accent"
+          />
+          <input
+            type="email"
+            placeholder="you@email.com"
+            value={b.email}
+            onChange={(e) => setB({ ...b, email: e.target.value })}
+            className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-text outline-none focus:border-accent"
+          />
+          <div>
+            <label className="text-xs font-medium text-faint">Select a date</label>
+            <input
+              type="date"
+              min={today}
+              value={b.date}
+              onChange={(e) => setB({ ...b, date: e.target.value })}
+              className="mt-1 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-text outline-none focus:border-accent [color-scheme:dark]"
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-faint">
+              <Clock size={13} /> Pick a time
+            </label>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {SLOTS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setB({ ...b, time: s })}
+                  className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                    b.time === s
+                      ? 'border-accent bg-white/10 text-text'
+                      : 'border-border text-muted hover:text-text'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={book}
+            disabled={!ready}
+            className="btn btn-primary justify-center disabled:opacity-50"
+          >
+            Book meeting on Google Meet
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

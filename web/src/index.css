@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  /* ambient radial glow */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    background:
+      radial-gradient(60rem 60rem at 80% -10%, rgba(255, 255, 255, 0.05), transparent 60%),
+      radial-gradient(50rem 50rem at -10% 20%, rgba(255, 255, 255, 0.03), transparent 55%);
+  }
+  /* The grid is now drawn inside CircuitGrid (SVG) so the running lights can
+     share its exact coordinate system and stay aligned to the lines. */
+}
+
+/* running light around a border — a bright arc rotates around the edge.
+   Uses the mask-composite "gradient border" trick so only the ring shows. */
+@property --brd {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes border-spin {
+  to {
+    --brd: 360deg;
+  }
+}
+/* The wrapper reserves a thin padding (the border). ::before fills the whole
+   box with a rotating conic gradient; the opaque inner card covers the centre,
+   leaving the animated ring visible in the padding gap. */
+.running-border {
+  position: relative;
+}
+.running-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--brd),
+    rgba(215, 217, 222, 0.08) 0deg,
+    rgba(215, 217, 222, 0.08) 190deg,
+    rgba(215, 217, 222, 0.55) 285deg,
+    #ffffff 330deg,
+    rgba(215, 217, 222, 0.08) 360deg
+  );
+  animation: border-spin 4s linear infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+}
+@media (prefers-reduced-motion: reduce) {
+  .running-border::before {
+    animation: none;
+  }
+}
+
+/* running-circuit light: a bright pulse travels each trace (straight → turn →
+   slide out). pathLength is normalized to 100 so one dash config fits all. */
+@keyframes circuit-run {
+  from {
+    stroke-dashoffset: 120;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.circuit-beam {
+  stroke-dasharray: 18 100;
+  animation-name: circuit-run;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  stroke-linecap: round;
+  /* muted gray glow — present but low-contrast so it never competes with text */
+  filter: drop-shadow(0 0 4px rgba(130, 134, 146, 0.4));
+}
+@media (prefers-reduced-motion: reduce) {
+  .circuit-beam {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@layer components {
+  .wrap {
+    @apply w-full mx-auto px-6;
+    max-width: theme('maxWidth.wrap');
+  }
+  .eyebrow {
+    @apply text-[13px] font-semibold uppercase tracking-[0.14em] text-accent2 mb-3.5;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-[15px] font-semibold text-text transition-all;
+  }
+  .btn:hover {
+    @apply -translate-y-0.5 border-accent;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #f2f3f5, #cfd1d6);
+    @apply border-transparent text-bg font-bold;
+    box-shadow: 0 8px 30px -10px rgba(255, 255, 255, 0.25);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 12px 36px -10px rgba(255, 255, 255, 0.35);
+  }
+  .grad-text {
+    background: linear-gradient(120deg, #ffffff, #8a8d96);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .card-surface {
+    @apply relative overflow-hidden rounded-xl2 p-7 transition-all;
+    /* frosted glass — a translucent gradient over the grid, gently blurred.
+       (This is the look the Geo feature card had; now every card shares it.) */
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+  }
+  .chip {
+    @apply rounded-[10px] border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors;
+  }
+  .chip:hover {
+    @apply border-accent;
+  }
+  .tag {
+    @apply rounded-full border border-border bg-bg-soft px-2.5 py-1 text-xs font-medium text-muted;
+  }
+}

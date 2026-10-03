@@ -1,0 +1,94 @@
+// Portfolio database schema.
+//
+// Provider is SQLite for zero-config local dev. To run on PostgreSQL in
+// production, change `provider` to "postgresql" and set DATABASE_URL to your
+// Postgres connection string — every model below is Postgres-compatible.
+//
+// Note: SQLite has no native enum/JSON types, so a couple of fields are stored
+// as strings (JSON-encoded / comma-separated) and parsed in the service layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// A portfolio project (the "Selected work" grid + detail pages).
+model Project {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  kind        String // e.g. "flagship · AI dev studio"
+  blurb       String // short card description
+  description String? // long-form detail (Problem / Solution / etc.)
+  tags        String // JSON array of strings, e.g. ["React","NestJS"]
+  liveUrl     String?
+  sourceUrl   String?
+  featured    Boolean  @default(false)
+  status      String   @default("active") // active | archived
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, order])
+}
+
+/// Messages submitted through the Contact form.
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([handled, createdAt])
+}
+
+/// A record of a Technical Demo interaction (AI plan requests, CRUD demos).
+model DemoRequest {
+  id        Int      @id @default(autoincrement())
+  kind      String // e.g. "ai.plan"
+  input     String // the visitor's input
+  output    String // JSON-encoded result summary
+  source    String   @default("fallback") // simpleflow | fallback
+  createdAt DateTime @default(now())
+}
+
+/// Demo workspace created live from the Technical Demo stepper.
+model Workspace {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  tasks     Task[]
+
+  @@map("workspaces")
+}
+
+/// A task inside a demo workspace.
+model Task {
+  id          Int       @id @default(autoincrement())
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  status      String    @default("todo") // todo | in_progress | done
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@map("tasks")
+}
+
+/// Lightweight audit trail written by the ActivityInterceptor.
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String // METHOD path
+  status    Int
+  ms        Int // request duration
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

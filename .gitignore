@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+web/dist/
+api/dist/
+
+# Env / secrets
+.env
+*.env
+!*.env.example
+
+# Prisma / SQLite
+*.db
+*.db-journal
+api/prisma/*.db
+api/prisma/*.db-journal
+
+# Logs / OS
+*.log
+.DS_Store

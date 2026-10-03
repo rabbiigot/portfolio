@@ -1,0 +1,35 @@
+# Builds and publishes the portfolio images to GHCR on every push to main,
+# mirroring the SimpleFlow image pipeline. The VPS can then switch its compose
+# from `build:` to these `image:` tags and just pull. (No deploy step here so no
+# SSH secrets are required to publish.)
+name: docker-images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/portfolio-${{ matrix.service }}:latest

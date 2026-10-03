@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+
+# Prisma / SQLite
+prisma/*.db
+prisma/*.db-journal
+.env
