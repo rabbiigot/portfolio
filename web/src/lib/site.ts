@@ -25,7 +25,7 @@ export const site = {
   },
 
   stats: [
-    { n: '15+', l: 'Products & platforms shipped' },
+    { n: '10+', l: 'Products & platforms shipped' },
     { n: 'Full-stack', l: 'Frontend → backend → infra' },
     { n: 'AI-native', l: 'LLM agents, RAG, realtime voice' },
     { n: 'Prod-ready', l: 'Docker, CI/CD, self-hosted VPS' },
