@@ -25,6 +25,15 @@ services:
       - MEETINGS_TIMEZONE=${MEETINGS_TIMEZONE:-Asia/Manila}
       - MEETINGS_DURATION_MIN=${MEETINGS_DURATION_MIN:-30}
       - MEETINGS_SETUP_KEY=${MEETINGS_SETUP_KEY:-}
+      # Contact-form email (SMTP, provider-agnostic). Values come from the .env
+      # next to this compose file on the VPS. Unset = emails skipped (message
+      # is still saved to the DB).
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - CONTACT_FROM=${CONTACT_FROM:-Portfolio <portfolio@syncstack.tech>}
+      - CONTACT_TO=${CONTACT_TO:-}
     volumes:
       - portfolio-db:/data
     networks:

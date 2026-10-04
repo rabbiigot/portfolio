@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Controller, Get } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { MailModule } from './mail/mail.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ContactModule } from './contact/contact.module';
 import { AiModule } from './ai/ai.module';
@@ -23,6 +24,7 @@ class HealthController {
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    MailModule,
     ProjectsModule,
     ContactModule,
     AiModule,
