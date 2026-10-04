@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Calendar, Video, Clock, CalendarIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,6 +51,17 @@ function MessageForm() {
     onSuccess: () => toast.success('Message sent — I’ll get back to you shortly.'),
     onError: () => toast.error('Couldn’t send your message. Please try again or email me directly.'),
   });
+
+  // After the confirmation shows, revert to the empty form so the card is
+  // ready for the next message instead of staying stuck on "Thanks…".
+  useEffect(() => {
+    if (!mutation.isSuccess) return;
+    const t = setTimeout(() => {
+      mutation.reset();
+      setForm({ name: '', email: '', message: '' });
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [mutation.isSuccess]);
 
   return (
     <div className="card-surface !p-6 flex h-full flex-col">
@@ -129,6 +140,17 @@ function BookMeeting() {
       });
     },
   });
+
+  // Keep the confirmation (with the Meet link) up a bit longer, then revert to
+  // the empty form so the card is ready for the next booking.
+  useEffect(() => {
+    if (!booking.isSuccess) return;
+    const t = setTimeout(() => {
+      booking.reset();
+      setB({ name: '', email: '', date: '', time: '' });
+    }, 20000);
+    return () => clearTimeout(t);
+  }, [booking.isSuccess]);
 
   const ready = b.name.trim() && b.email.trim() && b.date && b.time;
 
